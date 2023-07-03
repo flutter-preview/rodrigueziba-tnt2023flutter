@@ -5,7 +5,7 @@ import 'dart:io';
 
 class ImagePage extends StatefulWidget {
   const ImagePage({Key? key});
-   @override
+  @override
   _ImageScreenState createState() => _ImageScreenState();
 }
 
@@ -104,34 +104,35 @@ class _ImageScreenState extends State<ImagePage> {
               ),
               Container(
                 padding: const EdgeInsets.only(top: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center, // Centra los elementos horizontalmente
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-  margin: const EdgeInsets.only(top: 16),
-  alignment: Alignment.center,
-  child: _selectedImage != null
-      ? Image.file(File(_selectedImage!))
-      : Text('No se ha seleccionado ninguna imagen.'),
-),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _openCamera(context); // Llama a la función para abrir la cámara
-                        },
-                        icon: Icon(Icons.camera),
-                        label: Text(""),
-                      ),
+                      margin: const EdgeInsets.only(top: 16),
+                      alignment: Alignment.center,
+                      child: _selectedImage != null
+                          ? Image.file(File(_selectedImage!))
+                          : Text('No se ha seleccionado ninguna imagen.'),
                     ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          _openGallery(context); // Llama a la función para abrir la galería de imágenes
-                        },
-                        icon: Icon(Icons.image),
-                        label: Text(""),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _openCamera(context); // Llama a la función para abrir la cámara
+                          },
+                          icon: Icon(Icons.camera),
+                          label: Text(""),
+                        ),
+                        SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _openGallery(context); // Llama a la función para abrir la galería de imágenes
+                          },
+                          icon: Icon(Icons.image),
+                          label: Text(""),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -143,33 +144,34 @@ class _ImageScreenState extends State<ImagePage> {
     );
   }
 
-Future<void> _openCamera(BuildContext context) async {
-  final cameras = await availableCameras();
-  final camera = cameras.first;
+  Future<void> _openCamera(BuildContext context) async {
+    final cameras = await availableCameras();
+    final camera = cameras.first;
 
-  final imagePath = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => CameraScreen(camera: camera),
-    ),
-  );
+    final imagePath = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CameraScreen(camera: camera),
+      ),
+    );
 
-  if (imagePath != null) {
-    setState(() {
-      _selectedImage = imagePath;
-    });
+    if (imagePath != null) {
+      setState(() {
+        _selectedImage = imagePath;
+      });
+    }
   }
-}
 
- Future<void> _openGallery(BuildContext context) async {
-  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _openGallery(BuildContext context) async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
 
-  if (pickedFile != null) {
-    setState(() {
-      _selectedImage = pickedFile.path;
-    });
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = pickedFile.path;
+      });
+    }
   }
-}
 }
 
 class CameraScreen extends StatefulWidget {
@@ -205,6 +207,16 @@ class _CameraScreenState extends State<CameraScreen> {
     super.dispose();
   }
 
+  Future<String?> _capturePhoto() async {
+    if (!_controller.value.isInitialized) {
+      return null;
+    }
+
+    final image = await _controller.takePicture();
+
+    return image?.path;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_controller.value.isInitialized) {
@@ -212,7 +224,30 @@ class _CameraScreenState extends State<CameraScreen> {
     }
     return AspectRatio(
       aspectRatio: _controller.value.aspectRatio,
-      child: CameraPreview(_controller),
+      child: Stack(
+        children: [
+          CameraPreview(_controller),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              margin: EdgeInsets.only(bottom: 24),
+              child: ElevatedButton(
+                onPressed: () async {
+                  final imagePath = await _capturePhoto();
+                  Navigator.pop(context, imagePath);
+                },
+                child: Icon(Icons.camera, size: 36),
+                style: ElevatedButton.styleFrom(
+                  shape: CircleBorder(),
+                  padding: EdgeInsets.all(16),
+                  primary: Colors.white,
+                  onPrimary: Colors.black,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
